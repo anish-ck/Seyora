@@ -1,0 +1,6 @@
+the webhhook that clerk is using for sending request is this
+https://e92b4ded65f5.ngrok-free.app/api/users/webhook
+
+
+the every message that wwe think team members must know we can leave here, thank you.
+
