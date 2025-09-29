@@ -1,11 +1,65 @@
 {
-  "id": "583cd00a-859c-4e06-9f8e-d67ced7604e3",
+  "id": "f70dade6-2f00-4332-b229-7f8ec7e6d0fb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.users": {
-      "name": "users",
+    "public.Tourists": {
+      "name": "Tourists",
+      "schema": "",
+      "columns": {
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "walletAddress": {
+          "name": "walletAddress",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createAt": {
+          "name": "createAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Tourists_email_unique": {
+          "name": "Tourists_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        },
+        "Tourists_walletAddress_unique": {
+          "name": "Tourists_walletAddress_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "walletAddress"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Validators": {
+      "name": "Validators",
       "schema": "",
       "columns": {
         "email": {
@@ -39,22 +93,23 @@
           "primaryKey": false,
           "notNull": true
         },
-        "role": {
-          "name": "role",
+        "user_role": {
+          "name": "user_role",
           "type": "role",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'user'"
         },
-        "wallet_address": {
-          "name": "wallet_address",
-          "type": "text",
+        "createAt": {
+          "name": "createAt",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "now()"
         },
-        "timestamp": {
-          "name": "timestamp",
+        "updatedAt": {
+          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -65,25 +120,18 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "users_email_unique": {
-          "name": "users_email_unique",
+        "Validators_email_unique": {
+          "name": "Validators_email_unique",
           "nullsNotDistinct": false,
           "columns": [
             "email"
           ]
         },
-        "users_clerk_id_unique": {
-          "name": "users_clerk_id_unique",
+        "Validators_clerk_id_unique": {
+          "name": "Validators_clerk_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "clerk_id"
-          ]
-        },
-        "users_wallet_address_unique": {
-          "name": "users_wallet_address_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "wallet_address"
           ]
         }
       },

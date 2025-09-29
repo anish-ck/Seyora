@@ -1,19 +1,18 @@
 import React from "react";
 import BodyTop from "./bodyTop";
 import BodyMiddle from "./bodyMiddle";
-import BodyMiddle2 from "./BodyMiddle2";
-import BodyMiddle3 from "./BodyMiddle3";
-import BodyMiddle4 from "./BodyMiddle4";
+import BodySectionWithImage from "./BodySectionWithImage";
+import { landingPageSections } from "../landingPageConstants";
+
 const Body = () => {
   return (
-    <>
-    <BodyTop/>
-    <BodyMiddle/>
-    <BodyMiddle2 />
-    <BodyMiddle3 />
-    <BodyMiddle4 />
-    </>
-
+    <main>
+      <BodyTop />
+      <BodyMiddle />
+      <BodySectionWithImage id={0} num={0} />
+      <BodySectionWithImage id={1} num={1} />
+      <BodySectionWithImage id={0} num={2} />
+    </main>
   );
 };
 export default Body;

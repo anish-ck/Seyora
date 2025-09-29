@@ -1,6 +1,9 @@
 the webhhook that clerk is using for sending request is this
-https://e92b4ded65f5.ngrok-free.app/api/users/webhook
+https://93af0600bc07.ngrok-free.app/api/users/webhook
 
-
-the every message that wwe think team members must know we can leave here, thank you.
-
+user data in postsqql:-email, id, clerkId, imageUrl , name, role, wallet address, 
+database:- postsql;
+api:-trpc;
+authentication:- clerk;
+custodialWallet:- thirdWeb;
+yuser info for nft creation:- -

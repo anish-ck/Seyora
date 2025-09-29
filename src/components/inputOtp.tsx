@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { otpSchema } from "@/constant";
+import { otpSchema } from "@/lib/constant";
 
 interface handleOtpProps {
   handleOtp: (value: z.infer<typeof otpSchema>) => Promise<void>;
@@ -130,7 +130,7 @@ export const EnterOtpForVerification = ({
                 <Button
                   onClick={handleSubmit}
                   disabled={otpValue.length !== 6 || isLoading}
-                  className="w-full h-12 bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white font-bold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full h-12 bg-gradient-to-r cursor-pointer from-cyan-400 to-blue-600 hover:from-cyan-500 hover:to-blue-700 text-white font-bold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-2">

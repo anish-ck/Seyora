@@ -6,20 +6,23 @@ import {
   createSelectSchema,
 } from "drizzle-zod";
 
-export const UserRole = pgEnum("role", ["user", "validator", "admin"]);
 
-export const users = pgTable("users", {
+export const Validators = pgTable("Validators", {
   email: text("email").unique().notNull(),
   id: uuid("id").primaryKey().defaultRandom(),
   clerkId: text("clerk_id").unique().notNull(),
   name: text("name").notNull(),
   imageUri: text("image_url").notNull(),
-  role: UserRole("role").default("user").notNull(),
-  walletAddress: text("wallet_address").unique(), // Made nullable
   createAt: timestamp("createAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const insertUser = createInsertSchema(users);
-export const updateUser = createUpdateSchema(users);
-export const selectUser = createSelectSchema(users);
+export const Tourists = pgTable("Tourists", {
+  email: text("email").unique().notNull(),
+  walletAddress: text("walletAddress").unique(),
+  createAt: timestamp("createAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export const insertUser = createInsertSchema(Validators);
+export const updateUser = createUpdateSchema(Validators);
+export const selectUser = createSelectSchema(Validators);
