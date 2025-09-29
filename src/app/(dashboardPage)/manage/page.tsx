@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react"; // Import useState and useEf
 import { trpc } from "@/trpc/client"; // Use client-side trpc
 import { Tourists } from "@/db/schema";
 import UserDetailsPopUp from "@/modules/management/compoenents/UserDetailsPopUp"; // Import new component
-
+//this was for testing while biulding page
 async function getLocalData(): Promise<TouristColumn[]> {
   return [
     {
@@ -46,7 +46,6 @@ async function getLocalData(): Promise<TouristColumn[]> {
     },
   ];
 }
-
 const Management = () => {
   const [showUserDetailsPopup, setShowUserDetailsPopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TouristColumn | null>(null);

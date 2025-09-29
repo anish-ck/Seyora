@@ -15,7 +15,6 @@ import PersonalInfoForm from "@/modules/register/components/PersonalInfoForm";
 import IdVerificationForm from "@/modules/register/components/IdVerificationForm";
 import EmergencyContactsForm from "@/modules/register/components/EmergencyContactsForm";
 import TripInformationForm from "@/modules/register/components/TripInformationForm";
-import { tripStateRouter } from "@/modules/dashboard/server/route";
 type City = {
   id: number;
   name: string;
@@ -34,12 +33,12 @@ const Page = () => {
     defaultValues: {
       fullName: "nnn",
       DOB: new Date(),
-      idType: "adhaarCard", // Default to a valid enum value
-      adhaarCardValue: 942316904142,
+      idType: "panCard", // Default to a valid enum value
+      adhaarCardValue: 997765659,
       panCardValue: {
-        panNo: "CNPPV6212B",
-        dateOfBirth: "01/01/1983",
-        name: "HASINA VAJADA",
+        panNo: "",
+        dateOfBirth: "01/01/",
+        name: "HASINA ",
       },
       phoneNumber: "8888888888",
       email: "mrayan1qaz@gmail.com",
@@ -127,26 +126,31 @@ const Page = () => {
         }
       } else if (values.idType === "panCard") {
         setcurrentRegistrationStp(2); // "Sending Aadhaar OTP"
+        setTimeout(() => {
+          console.log("rrr");
+        }, 4000);
         if (isAbortingRef.current) return;
-        try {
-          // PAN Card verification is considered part of "Validating your details" (Step 0)
-          if (!values.panCardValue) {
-            setError("PAN card details are incomplete.");
-            return;
-          }
-          const isPanValid = await verifyPanCard.mutateAsync({
-            panNo: values.panCardValue.panNo!,
-            dob: values.panCardValue.dateOfBirth!,
-            name: values.panCardValue.name!,
-          });
-          if (isPanValid.status !== "VALID") {
-            setError("PAN card verification failed. InVaild Pancard Number");
-          }
-        } catch (error: any) {
-          setError(error.message || "PAN card verification failed.");
-          console.log("PAN verification failed due to", error.message);
-          return; // Abort if PAN verification fails
-        }
+        // try {
+        //   // PAN Card verification is considered part of "Validating your details" (Step 0)
+        //   if (!values.panCardValue) {
+        //     setError("PAN card details are incomplete.");
+        //     return;
+        //   }
+        //   const isPanValid = await verifyPanCard.mutateAsync({
+        //     panNo: values.panCardValue.panNo!,
+        //     dob: values.panCardValue.dateOfBirth!,
+        //     name: values.panCardValue.name!,
+        //   });
+        //   if (isPanValid.status !== "VALID") {
+        //     setError(`ddd${isPanValid.message}`);
+        //     console.log("PAN card verification failed:", isPanValid.message)
+        //     return;
+        //   }
+        // } catch (error: any) {
+        //   setError(error.message || "PAN card verification failed.");
+        //   console.log("PAN verification failed due to", error.message);
+        //   return; // Abort if PAN verification fails
+        // }
       }
       if (isAbortingRef.current) return;
       setcurrentRegistrationStp(3); // "Uploading docs securely"
