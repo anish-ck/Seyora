@@ -15,6 +15,7 @@ import PersonalInfoForm from "@/modules/register/components/PersonalInfoForm";
 import IdVerificationForm from "@/modules/register/components/IdVerificationForm";
 import EmergencyContactsForm from "@/modules/register/components/EmergencyContactsForm";
 import TripInformationForm from "@/modules/register/components/TripInformationForm";
+import { tripStateRouter } from "@/modules/dashboard/server/route";
 type City = {
   id: number;
   name: string;
@@ -170,9 +171,14 @@ const Page = () => {
         if (isAbortingRef.current) return;
         try {
           // Store wallet address in DB - this is part of wallet creation/finalization
+          const tripduration: number =
+            values.tripStart.getDay() - values.tripEnd.getDay();
           await userWalletAddressInDataBase.mutateAsync({
             email: values.email,
-            walletAddress,
+            tripduration,
+            cid,
+            tripEnd: values.tripEnd.getDay(),
+            location: `${values.tripState}, ${values.tripCity}`,
           });
         } catch (err: any) {
           console.error("Failed to store wallet in DB:", err.message);

@@ -1,6 +1,6 @@
 import { CreateTRPCRouter, publicProcedure } from "@/trpc/init";
 import { NFTcontract } from "@/web3/ownerWallet";
-import { z } from "zod";
+import { number, z } from "zod";
 import { pinata } from "@/web3/custodial/pinataUpload";
 import { sepolia } from "thirdweb/chains";
 import { client, wallet } from "@/web3/custodial/walletCreation";
@@ -84,7 +84,7 @@ export const registerationRouter = CreateTRPCRouter({
           {
             headers: {
               "content-type": "application/json",
-              "authorization": accessToken,
+              authorization: accessToken,
               "x-api-key": process.env.DIGILOKER_API_KEY,
               "x-api-version": "1.0.0",
             },
@@ -92,7 +92,10 @@ export const registerationRouter = CreateTRPCRouter({
         );
         // console.log("if i got refernce ID", result.data.reference_id);
         const dataObject = result.data.data;
-        return {refernceId:dataObject.reference_id, message:dataObject.message };
+        return {
+          refernceId: dataObject.reference_id,
+          message: dataObject.message,
+        };
       } catch (error: any) {
         console.error("Aadhaar OTP request failed:", error.message);
         throw new TRPCError({
@@ -267,14 +270,21 @@ export const registerationRouter = CreateTRPCRouter({
     .input(
       z.object({
         email: z.string(),
-        walletAddress: z.string(),
+        tripduration: z.number(),
+        location: z.string(),
+        tripEnd: z.number(),
+        cid: z.string(),
       })
     )
     .mutation(async ({ input }) => {
       try {
         await db.insert(Tourists).values({
           email: input.email,
-          walletAddress: input.walletAddress,
+          TripDuration: `${input.tripduration} days`,
+          Triplocation: input.location,
+          tripEnd: input.tripEnd,
+          cid: input.cid,
+          status: "ACTIVE",
         });
         return { success: true };
       } catch (err) {

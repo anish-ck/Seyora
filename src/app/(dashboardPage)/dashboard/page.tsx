@@ -24,7 +24,7 @@ const page = () => {
   const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#3B82F6", "#EF4444"];
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-black via-violet-950 to-black
+      <div className="min-h-screen bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950
 ">
         <div className="container mx-auto px-6 py-8 space-y-10">
           <div className="grid grid-cols-4 gap-6">

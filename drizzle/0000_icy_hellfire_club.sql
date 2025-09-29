@@ -1,11 +1,14 @@
-CREATE TYPE "public"."role" AS ENUM('user', 'validator', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."trip_status" AS ENUM('ACTIVE', 'CLOSE');--> statement-breakpoint
 CREATE TABLE "Tourists" (
 	"email" text NOT NULL,
-	"walletAddress" text,
+	"tripDuration" text NOT NULL,
+	"cid" text NOT NULL,
 	"createAt" timestamp DEFAULT now() NOT NULL,
+	"Triplocation" text NOT NULL,
+	"status" "trip_status" NOT NULL,
+	"tripEnd" integer NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "Tourists_email_unique" UNIQUE("email"),
-	CONSTRAINT "Tourists_walletAddress_unique" UNIQUE("walletAddress")
+	CONSTRAINT "Tourists_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "Validators" (
@@ -14,7 +17,6 @@ CREATE TABLE "Validators" (
 	"clerk_id" text NOT NULL,
 	"name" text NOT NULL,
 	"image_url" text NOT NULL,
-	"user_role" "role" DEFAULT 'user' NOT NULL,
 	"createAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "Validators_email_unique" UNIQUE("email"),

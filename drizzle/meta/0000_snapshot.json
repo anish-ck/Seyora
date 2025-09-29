@@ -1,5 +1,5 @@
 {
-  "id": "f70dade6-2f00-4332-b229-7f8ec7e6d0fb",
+  "id": "f2ad3a95-5d05-4808-8f41-61777e29f308",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -14,11 +14,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "walletAddress": {
-          "name": "walletAddress",
+        "tripDuration": {
+          "name": "tripDuration",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "cid": {
+          "name": "cid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "createAt": {
           "name": "createAt",
@@ -26,6 +32,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "Triplocation": {
+          "name": "Triplocation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "trip_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tripEnd": {
+          "name": "tripEnd",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -44,13 +69,6 @@
           "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
-        },
-        "Tourists_walletAddress_unique": {
-          "name": "Tourists_walletAddress_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "walletAddress"
           ]
         }
       },
@@ -93,14 +111,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "user_role": {
-          "name": "user_role",
-          "type": "role",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'user'"
-        },
         "createAt": {
           "name": "createAt",
           "type": "timestamp",
@@ -141,13 +151,12 @@
     }
   },
   "enums": {
-    "public.role": {
-      "name": "role",
+    "public.trip_status": {
+      "name": "trip_status",
       "schema": "public",
       "values": [
-        "user",
-        "validator",
-        "admin"
+        "ACTIVE",
+        "CLOSE"
       ]
     }
   },

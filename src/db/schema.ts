@@ -1,11 +1,13 @@
-import { pgTable, uuid, text, pgEnum, timestamp } from "drizzle-orm/pg-core";
-import { Relation, relations } from "drizzle-orm";
 import {
-  createInsertSchema,
-  createUpdateSchema,
-  createSelectSchema,
-} from "drizzle-zod";
+  pgTable,
+  uuid,
+  text,
+  pgEnum,
+  timestamp,
+  integer,
+} from "drizzle-orm/pg-core";
 
+export const tripStatusEnum = pgEnum("trip_status", ["ACTIVE", "CLOSE"]);
 
 export const Validators = pgTable("Validators", {
   email: text("email").unique().notNull(),
@@ -19,10 +21,11 @@ export const Validators = pgTable("Validators", {
 
 export const Tourists = pgTable("Tourists", {
   email: text("email").unique().notNull(),
-  walletAddress: text("walletAddress").unique(),
+  TripDuration: text("tripDuration").notNull(),
+  cid: text("cid").notNull(),
   createAt: timestamp("createAt").defaultNow().notNull(),
+  Triplocation: text("Triplocation").notNull(),
+  status: tripStatusEnum("status").notNull(),
+  tripEnd: integer("tripEnd").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
-export const insertUser = createInsertSchema(Validators);
-export const updateUser = createUpdateSchema(Validators);
-export const selectUser = createSelectSchema(Validators);

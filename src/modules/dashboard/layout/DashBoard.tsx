@@ -1,26 +1,45 @@
 "use client";
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import BottomProfile from "../component/bottomProfile";
 import { SidebarButtonSkeleton } from "@/lib/suspenses";
 import { menuItems } from "@/lib/constant";
+import { usePathname } from "next/navigation";
 
 const DashBoard = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeItem, setActiveItem] = useState("dashboard");
-  const [activeItemTitle, setActiveItemTitle] = useState("dashboard");
+  // Initialize activeItem based on current pathname
+  const [activeItem, setActiveItem] = useState(() => {
+    const currentPath = pathname.split("/")[1]; // Extracts 'dashboard', 'register', etc.
+    return currentPath || "dashboard"; // Default to 'dashboard' if path is root
+  });
+  const [activeItemTitle, setActiveItemTitle] = useState(() => {
+    const currentPath = pathname.split("/")[1];
+    const item = menuItems.find((item) => item.id === currentPath);
+    return item ? item.label : "dashboard"; // Default label
+  });
 
-  const changeSection =async (value: string, label: string) => {
+  useEffect(() => {
+    const currentPath = pathname.split("/")[1];
+    if (currentPath && activeItem !== currentPath) {
+      setActiveItem(currentPath);
+      const item = menuItems.find((item) => item.id === currentPath);
+      setActiveItemTitle(item ? item.label : "dashboard");
+    }
+  }, [pathname, activeItem]);
+
+  const changeSection = async (value: string, label: string) => {
     setActiveItem(value);
     setActiveItemTitle(label);
     await router.push(`/${value}`);
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-indigo-50/50">
+    <div className="flex min-h-screen bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950">
       <div
         className={`${
           isSidebarOpen ? "w-69" : "w-33"
@@ -71,40 +90,38 @@ const DashBoard = ({ children }: { children: React.ReactNode }) => {
                 const isActive = activeItem === item.id;
 
                 return (
-                  <Suspense key={item.id} fallback={<SidebarButtonSkeleton/>}>
-
-                  <button
-                    key={item.id}
-                    onClick={() => changeSection(item.id, item.label)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
-                      isActive
-                        ? "bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-cyan-500/20 text-white shadow-lg border border-violet-400/30"
-                        : "text-purple-200 hover:text-white hover:bg-purple-700 cursor-pointer"
-                    } ${!isSidebarOpen && "justify-center"}`}
-                  >
-                    <Icon
-                      className={`w-5 h-5 ${
+                  <Suspense key={item.id} fallback={<SidebarButtonSkeleton />}>
+                    <button
+                      key={item.id}
+                      onClick={() => changeSection(item.id, item.label)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
                         isActive
-                          ? "text-violet-300"
-                          : "text-purple-300 group-hover:text-violet-300"
-                      } transition-colors`}
-                    />
-                    {isSidebarOpen && (
-                      <>
-                        <span className="font-medium">{item.label}</span>
-                        {isActive && (
-                          <ChevronRight className="w-4 h-4 text-violet-300 ml-auto" />
-                        )}
-                      </>
-                    )}
+                          ? "bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-cyan-500/20 text-white shadow-lg border border-violet-400/30"
+                          : "text-purple-200 hover:text-white hover:bg-purple-700 cursor-pointer"
+                      } ${!isSidebarOpen && "justify-center"}`}
+                    >
+                      <Icon
+                        className={`w-5 h-5 ${
+                          isActive
+                            ? "text-violet-300"
+                            : "text-purple-300 group-hover:text-violet-300"
+                        } transition-colors`}
+                      />
+                      {isSidebarOpen && (
+                        <>
+                          <span className="font-medium">{item.label}</span>
+                          {isActive && (
+                            <ChevronRight className="w-4 h-4 text-violet-300 ml-auto" />
+                          )}
+                        </>
+                      )}
 
-                    {isActive && (
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-violet-400 to-purple-500 rounded-r-full"></div>
-                    )}
-                  </button>
-                    </Suspense>
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-violet-400 to-purple-500 rounded-r-full"></div>
+                      )}
+                    </button>
+                  </Suspense>
                 );
-
               })}
             </nav>
 
@@ -117,9 +134,7 @@ const DashBoard = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
 
-      <div className="flex-1 relative">
-          {children}
-      </div>
+      <div className="flex-1 relative">{children}</div>
     </div>
   );
 };
