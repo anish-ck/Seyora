@@ -10,17 +10,17 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useUser } from '@clerk/clerk-expo';
 
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { colors } from '@/lib/auth-constants';
 import { quickActions } from '@/lib/navigation-constants';
-import { useAuth } from '@/lib/auth-context';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
 
 export default function DashboardScreen() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
 
   const stats = [
@@ -49,7 +49,7 @@ export default function DashboardScreen() {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeText}>
-            Good morning, {user?.name?.split(' ')[0] || 'User'}! 👋
+            Good morning, {user?.firstName || user?.fullName?.split(' ')[0] || 'User'}! 👋
           </Text>
           <Text style={styles.welcomeSubtext}>
             Here's what's happening with your tourist safety system today.

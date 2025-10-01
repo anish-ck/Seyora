@@ -1,22 +1,22 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
+import { useAuth } from '@clerk/clerk-expo';
 import { colors } from '@/lib/auth-constants';
-import { useAuth } from '@/lib/auth-context';
 
 export default function IndexScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
+    if (isLoaded) {
+      if (isSignedIn) {
         router.replace('/(tabs)');
       } else {
         router.replace('/(auth)/login');
       }
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isSignedIn, isLoaded]);
 
   return (
     <View style={{ 

@@ -5,14 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 
-import { useAuth } from '@/lib/auth-context';
 import { menuItems } from '@/lib/navigation-constants';
 import { colors } from '@/lib/auth-constants';
 
@@ -21,7 +21,8 @@ interface DrawerContentProps {
 }
 
 export const DrawerContent: React.FC<DrawerContentProps> = ({ onClose }) => {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -31,12 +32,26 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ onClose }) => {
   };
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.replace('/(auth)/login');
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/(auth)/login');
+            } catch (error) {
+              console.error('Sign out error:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const isActive = (path: string) => {
@@ -68,8 +83,8 @@ export const DrawerContent: React.FC<DrawerContentProps> = ({ onClose }) => {
               <Ionicons name="person" size={24} color={colors.text.white} />
             </View>
             <View style={styles.userDetails}>
-              <Text style={styles.userName}>{user?.name || 'User'}</Text>
-              <Text style={styles.userEmail}>{user?.email}</Text>
+              <Text style={styles.userName}>{user?.fullName || user?.firstName || 'User'}</Text>
+              <Text style={styles.userEmail}>{user?.primaryEmailAddress?.emailAddress}</Text>
             </View>
           </View>
         </View>

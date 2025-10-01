@@ -9,9 +9,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@clerk/clerk-expo';
 
 import { colors } from '@/lib/auth-constants';
-import { useAuth } from '@/lib/auth-context';
 
 interface HeaderProps {
   title: string;
@@ -23,7 +23,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ title, onMenuPress, rightAction }) => {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   return (
     <>
@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuPress, rightAction 
               
               <View style={styles.titleContainer}>
                 <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>Welcome back, {user?.name?.split(' ')[0] || 'User'}</Text>
+                <Text style={styles.subtitle}>Welcome back, {user?.firstName || user?.fullName?.split(' ')[0] || 'User'}</Text>
               </View>
             </View>
 
