@@ -18,19 +18,79 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { colors } from '@/lib/auth-constants';
 
-const registrationSchema = z.object({
-    fullName: z.string().min(3, 'Full name is required'),
-    email: z.string().email('Valid email is required'),
-    phoneNumber: z.string().min(8, 'Phone number is required'),
-    country: z.string().min(2, 'Country is required'),
-    passportNumber: z.string().min(6, 'Passport number is required'),
-    dateOfBirth: z.string().min(1, 'Date of birth is required'),
-    tripStartDate: z.string().min(1, 'Trip start date is required'),
-    tripEndDate: z.string().min(1, 'Trip end date is required'),
-    accommodation: z.string().optional(),
-    emergencyContactName: z.string().min(3, 'Emergency contact name is required'),
-    emergencyContactPhone: z.string().min(8, 'Emergency contact phone is required'),
-});
+const registrationSchema = z
+    .object({
+        fullName: z.string().min(3, 'Full name is required'),
+        DOB: z.date({ required_error: 'Date of birth is required' }),
+        idType: z.enum(['adhaarCard', 'panCard']),
+        adhaarCardValue: z.number().optional(),
+        panCardValue: z
+            .object({
+                panNo: z.string().optional(),
+                dateOfBirth: z.string().optional(),
+                name: z.string().optional(),
+            })
+            .optional(),
+        phoneNumber: z.string().min(8, 'Phone number is required'),
+        email: z.string().email('Valid email is required'),
+        emergencyContactOne: z.object({
+            phoneNumber: z.string().min(8, 'Contact phone number is required'),
+            name: z.string().min(3, 'Minimum three letters required'),
+            relation: z.string().min(3, 'Minimum three letters required'),
+        }),
+        emergencyContactTwo: z
+            .object({
+                phoneNumber: z.string().optional(),
+                name: z.string().optional(),
+                relation: z.string().optional(),
+            })
+            .optional(),
+        tripStart: z.date({ required_error: 'Trip start date is required' }),
+        tripEnd: z.date({ required_error: 'Trip end date is required' }),
+        accomodation: z.string().optional(),
+        tripPurpose: z.enum(['travel', 'buisness', 'other']),
+        tripDetails: z.string().optional(),
+        tripState: z.string().min(2, 'State is required'),
+        tripCity: z.string().min(1, 'City is required'),
+        healthInfo: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.idType === 'adhaarCard') {
+            if (!data.adhaarCardValue) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'Aadhaar Card number is required',
+                    path: ['adhaarCardValue'],
+                });
+            }
+        }
+        if (data.idType === 'panCard') {
+            if (!data.panCardValue?.panNo || data.panCardValue.panNo.length < 1) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'PAN number is required',
+                    path: ['panCardValue.panNo'],
+                });
+            }
+            if (!data.panCardValue?.name || data.panCardValue.name.length < 1) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'Name on PAN Card is required',
+                    path: ['panCardValue.name'],
+                });
+            }
+            if (
+                !data.panCardValue?.dateOfBirth ||
+                data.panCardValue.dateOfBirth.length < 1
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'Date of Birth on PAN Card is required',
+                    path: ['panCardValue.dateOfBirth'],
+                });
+            }
+        }
+    });
 
 type RegistrationForm = z.infer<typeof registrationSchema>;
 
@@ -48,16 +108,34 @@ export default function RegisterTouristScreen() {
         resolver: zodResolver(registrationSchema),
         defaultValues: {
             fullName: '',
-            email: '',
+            DOB: new Date(),
+            idType: 'panCard',
+            adhaarCardValue: undefined,
+            panCardValue: {
+                panNo: '',
+                dateOfBirth: '',
+                name: '',
+            },
             phoneNumber: '',
-            country: '',
-            passportNumber: '',
-            dateOfBirth: '',
-            tripStartDate: '',
-            tripEndDate: '',
-            accommodation: '',
-            emergencyContactName: '',
-            emergencyContactPhone: '',
+            email: '',
+            emergencyContactOne: {
+                phoneNumber: '',
+                name: '',
+                relation: '',
+            },
+            emergencyContactTwo: {
+                phoneNumber: '',
+                name: '',
+                relation: '',
+            },
+            tripStart: new Date(),
+            tripEnd: new Date(),
+            accomodation: '',
+            tripPurpose: 'travel',
+            tripDetails: '',
+            tripState: '',
+            tripCity: '',
+            healthInfo: '',
         },
     });
 
@@ -99,11 +177,11 @@ export default function RegisterTouristScreen() {
     const getFieldsForStep = (step: number): (keyof RegistrationForm)[] => {
         switch (step) {
             case 1:
-                return ['fullName', 'email', 'phoneNumber', 'country'];
+                return ['fullName', 'email', 'phoneNumber', 'DOB'];
             case 2:
-                return ['passportNumber', 'dateOfBirth', 'tripStartDate', 'tripEndDate'];
+                return ['idType', 'adhaarCardValue', 'panCardValue', 'tripStart', 'tripEnd', 'tripPurpose', 'tripState', 'tripCity'];
             case 3:
-                return ['emergencyContactName', 'emergencyContactPhone'];
+                return ['emergencyContactOne'];
             default:
                 return [];
         }
@@ -194,101 +272,291 @@ export default function RegisterTouristScreen() {
                 )}
             />
 
-            <Controller
-                control={control}
-                name="country"
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                        label="Country"
-                        placeholder="Enter your country"
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        error={errors.country?.message}
-                    />
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Date of Birth</Text>
+                <Controller
+                    control={control}
+                    name="DOB"
+                    render={({ field: { onChange, value } }) => (
+                        <TouchableOpacity
+                            style={[styles.dateInput, errors.DOB && styles.inputError]}
+                            onPress={() => {
+                                // You can implement a date picker here
+                                Alert.alert('Date Picker', 'Date picker implementation needed');
+                            }}
+                        >
+                            <Text style={styles.dateText}>
+                                {value ? value.toLocaleDateString() : 'Select date of birth'}
+                            </Text>
+                            <Ionicons name="calendar" size={20} color={colors.text.slate400} />
+                        </TouchableOpacity>
+                    )}
+                />
+                {errors.DOB && (
+                    <Text style={styles.errorText}>{errors.DOB.message}</Text>
                 )}
-            />
+            </View>
         </View>
     );
 
     const renderStep2 = () => (
         <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Travel Information</Text>
+            <Text style={styles.stepTitle}>ID Verification & Trip Details</Text>
             <Text style={styles.stepDescription}>
-                Please provide your travel and identification details
+                Please provide your identification and travel details
             </Text>
 
+            {/* ID Type Selection */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>ID Type</Text>
+                <Controller
+                    control={control}
+                    name="idType"
+                    render={({ field: { onChange, value } }) => (
+                        <View style={styles.radioContainer}>
+                            <TouchableOpacity
+                                style={styles.radioOption}
+                                onPress={() => onChange('panCard')}
+                            >
+                                <View style={[styles.radioCircle, value === 'panCard' && styles.radioSelected]}>
+                                    {value === 'panCard' && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioText}>PAN Card</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.radioOption}
+                                onPress={() => onChange('adhaarCard')}
+                            >
+                                <View style={[styles.radioCircle, value === 'adhaarCard' && styles.radioSelected]}>
+                                    {value === 'adhaarCard' && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioText}>Aadhaar Card</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                />
+            </View>
+
+            {/* Conditional ID Fields */}
             <Controller
                 control={control}
-                name="passportNumber"
+                name="idType"
+                render={({ field: { value: idType } }) => (
+                    <>
+                        {idType === 'panCard' && (
+                            <>
+                                <Controller
+                                    control={control}
+                                    name="panCardValue.panNo"
+                                    render={({ field: { onChange, onBlur, value } }) => (
+                                        <Input
+                                            label="PAN Number"
+                                            placeholder="Enter PAN number"
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            error={errors.panCardValue?.panNo?.message}
+                                        />
+                                    )}
+                                />
+                                <Controller
+                                    control={control}
+                                    name="panCardValue.name"
+                                    render={({ field: { onChange, onBlur, value } }) => (
+                                        <Input
+                                            label="Name on PAN Card"
+                                            placeholder="Enter name as on PAN card"
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            error={errors.panCardValue?.name?.message}
+                                        />
+                                    )}
+                                />
+                                <Controller
+                                    control={control}
+                                    name="panCardValue.dateOfBirth"
+                                    render={({ field: { onChange, onBlur, value } }) => (
+                                        <Input
+                                            label="Date of Birth on PAN Card"
+                                            placeholder="DD/MM/YYYY"
+                                            value={value || ''}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            error={errors.panCardValue?.dateOfBirth?.message}
+                                        />
+                                    )}
+                                />
+                            </>
+                        )}
+                        {idType === 'adhaarCard' && (
+                            <Controller
+                                control={control}
+                                name="adhaarCardValue"
+                                render={({ field: { onChange, onBlur, value } }) => (
+                                    <Input
+                                        label="Aadhaar Number"
+                                        placeholder="Enter 12-digit Aadhaar number"
+                                        value={value?.toString() || ''}
+                                        onChangeText={(text) => onChange(parseInt(text) || undefined)}
+                                        onBlur={onBlur}
+                                        error={errors.adhaarCardValue?.message}
+                                        keyboardType="numeric"
+                                    />
+                                )}
+                            />
+                        )}
+                    </>
+                )}
+            />
+
+            {/* Trip Dates */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Trip Start Date</Text>
+                <Controller
+                    control={control}
+                    name="tripStart"
+                    render={({ field: { onChange, value } }) => (
+                        <TouchableOpacity
+                            style={[styles.dateInput, errors.tripStart && styles.inputError]}
+                            onPress={() => {
+                                Alert.alert('Date Picker', 'Date picker implementation needed');
+                            }}
+                        >
+                            <Text style={styles.dateText}>
+                                {value ? value.toLocaleDateString() : 'Select trip start date'}
+                            </Text>
+                            <Ionicons name="calendar" size={20} color={colors.text.slate400} />
+                        </TouchableOpacity>
+                    )}
+                />
+                {errors.tripStart && (
+                    <Text style={styles.errorText}>{errors.tripStart.message}</Text>
+                )}
+            </View>
+
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Trip End Date</Text>
+                <Controller
+                    control={control}
+                    name="tripEnd"
+                    render={({ field: { onChange, value } }) => (
+                        <TouchableOpacity
+                            style={[styles.dateInput, errors.tripEnd && styles.inputError]}
+                            onPress={() => {
+                                Alert.alert('Date Picker', 'Date picker implementation needed');
+                            }}
+                        >
+                            <Text style={styles.dateText}>
+                                {value ? value.toLocaleDateString() : 'Select trip end date'}
+                            </Text>
+                            <Ionicons name="calendar" size={20} color={colors.text.slate400} />
+                        </TouchableOpacity>
+                    )}
+                />
+                {errors.tripEnd && (
+                    <Text style={styles.errorText}>{errors.tripEnd.message}</Text>
+                )}
+            </View>
+
+            {/* Trip Purpose */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Trip Purpose</Text>
+                <Controller
+                    control={control}
+                    name="tripPurpose"
+                    render={({ field: { onChange, value } }) => (
+                        <View style={styles.radioContainer}>
+                            <TouchableOpacity
+                                style={styles.radioOption}
+                                onPress={() => onChange('travel')}
+                            >
+                                <View style={[styles.radioCircle, value === 'travel' && styles.radioSelected]}>
+                                    {value === 'travel' && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioText}>Travel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.radioOption}
+                                onPress={() => onChange('buisness')}
+                            >
+                                <View style={[styles.radioCircle, value === 'buisness' && styles.radioSelected]}>
+                                    {value === 'buisness' && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioText}>Business</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.radioOption}
+                                onPress={() => onChange('other')}
+                            >
+                                <View style={[styles.radioCircle, value === 'other' && styles.radioSelected]}>
+                                    {value === 'other' && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioText}>Other</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                />
+            </View>
+
+            <Controller
+                control={control}
+                name="tripState"
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                        label="Passport Number"
-                        placeholder="Enter your passport number"
+                        label="Trip State"
+                        placeholder="Enter destination state"
                         value={value}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        error={errors.passportNumber?.message}
+                        error={errors.tripState?.message}
                     />
                 )}
             />
 
             <Controller
                 control={control}
-                name="dateOfBirth"
+                name="tripCity"
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                        label="Date of Birth"
-                        placeholder="YYYY-MM-DD"
+                        label="Trip City"
+                        placeholder="Enter destination city"
                         value={value}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        error={errors.dateOfBirth?.message}
+                        error={errors.tripCity?.message}
                     />
                 )}
             />
 
             <Controller
                 control={control}
-                name="tripStartDate"
+                name="tripDetails"
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                        label="Trip Start Date"
-                        placeholder="YYYY-MM-DD"
-                        value={value}
+                        label="Trip Details (Optional)"
+                        placeholder="Additional trip information"
+                        value={value || ''}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        error={errors.tripStartDate?.message}
+                        error={errors.tripDetails?.message}
+                        multiline
+                        numberOfLines={3}
                     />
                 )}
             />
 
             <Controller
                 control={control}
-                name="tripEndDate"
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                        label="Trip End Date"
-                        placeholder="YYYY-MM-DD"
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        error={errors.tripEndDate?.message}
-                    />
-                )}
-            />
-
-            <Controller
-                control={control}
-                name="accommodation"
+                name="accomodation"
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Input
                         label="Accommodation (Optional)"
                         placeholder="Hotel name or address"
-                        value={value}
+                        value={value || ''}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        error={errors.accommodation?.message}
+                        error={errors.accomodation?.message}
                     />
                 )}
             />
@@ -297,38 +565,121 @@ export default function RegisterTouristScreen() {
 
     const renderStep3 = () => (
         <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Emergency Contact</Text>
+            <Text style={styles.stepTitle}>Emergency Contacts & Health Info</Text>
             <Text style={styles.stepDescription}>
-                Please provide emergency contact information
+                Please provide emergency contact information and health details
             </Text>
 
+            {/* Primary Emergency Contact */}
+            <Text style={styles.sectionTitle}>Primary Emergency Contact</Text>
             <Controller
                 control={control}
-                name="emergencyContactName"
+                name="emergencyContactOne.name"
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                        label="Emergency Contact Name"
+                        label="Contact Name"
                         placeholder="Enter contact name"
                         value={value}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        error={errors.emergencyContactName?.message}
+                        error={errors.emergencyContactOne?.name?.message}
                     />
                 )}
             />
 
             <Controller
                 control={control}
-                name="emergencyContactPhone"
+                name="emergencyContactOne.phoneNumber"
                 render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                        label="Emergency Contact Phone"
+                        label="Contact Phone"
                         placeholder="Enter contact phone number"
                         value={value}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        error={errors.emergencyContactPhone?.message}
+                        error={errors.emergencyContactOne?.phoneNumber?.message}
                         keyboardType="phone-pad"
+                    />
+                )}
+            />
+
+            <Controller
+                control={control}
+                name="emergencyContactOne.relation"
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                        label="Relationship"
+                        placeholder="e.g., Father, Mother, Spouse"
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        error={errors.emergencyContactOne?.relation?.message}
+                    />
+                )}
+            />
+
+            {/* Secondary Emergency Contact */}
+            <Text style={styles.sectionTitle}>Secondary Emergency Contact (Optional)</Text>
+            <Controller
+                control={control}
+                name="emergencyContactTwo.name"
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                        label="Contact Name"
+                        placeholder="Enter contact name"
+                        value={value || ''}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        error={errors.emergencyContactTwo?.name?.message}
+                    />
+                )}
+            />
+
+            <Controller
+                control={control}
+                name="emergencyContactTwo.phoneNumber"
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                        label="Contact Phone"
+                        placeholder="Enter contact phone number"
+                        value={value || ''}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        error={errors.emergencyContactTwo?.phoneNumber?.message}
+                        keyboardType="phone-pad"
+                    />
+                )}
+            />
+
+            <Controller
+                control={control}
+                name="emergencyContactTwo.relation"
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                        label="Relationship"
+                        placeholder="e.g., Brother, Sister, Friend"
+                        value={value || ''}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        error={errors.emergencyContactTwo?.relation?.message}
+                    />
+                )}
+            />
+
+            {/* Health Information */}
+            <Controller
+                control={control}
+                name="healthInfo"
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                        label="Health Information (Optional)"
+                        placeholder="Any medical conditions, allergies, or important health information"
+                        value={value || ''}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        error={errors.healthInfo?.message}
+                        multiline
+                        numberOfLines={4}
                     />
                 )}
             />
@@ -523,5 +874,79 @@ const styles = StyleSheet.create({
     fullWidthButton: {
         flex: 1,
         width: '100%',
+    },
+    inputContainer: {
+        marginBottom: 16,
+    },
+    inputLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.text.white,
+        marginBottom: 8,
+    },
+    dateInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: colors.background.slate800,
+        borderWidth: 1,
+        borderColor: colors.border.purple500 + '40',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        minHeight: 50,
+    },
+    dateText: {
+        fontSize: 16,
+        color: colors.text.white,
+    },
+    inputError: {
+        borderColor: '#ef4444',
+    },
+    errorText: {
+        fontSize: 14,
+        color: '#ef4444',
+        marginTop: 4,
+    },
+    radioContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+    },
+    radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 16,
+        marginBottom: 8,
+    },
+    radioCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: colors.border.purple500 + '40',
+        marginRight: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioSelected: {
+        borderColor: colors.primary.purple,
+    },
+    radioInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: colors.primary.purple,
+    },
+    radioText: {
+        fontSize: 16,
+        color: colors.text.white,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.text.white,
+        marginTop: 24,
+        marginBottom: 16,
     },
 });
