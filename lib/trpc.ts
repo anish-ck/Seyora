@@ -1,31 +1,17 @@
 // lib/trpc.ts (mobile)
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCReact } from '@trpc/react-query';
-import superjson from 'superjson';
+// For now, we'll create a mock TRPC client until the backend connection is properly set up
 
-// Define the AppRouter type based on your web app structure
-export type AppRouter = {
-  tripRegister: any;
-  registerationRouter: any;
-  manageusers: any;
+export const trpc = {
+  tripRegister: {
+    getCities: {
+      useQuery: (input: { state_iso2: string }, options?: any) => {
+        // Mock implementation - replace with actual TRPC when backend is ready
+        return {
+          data: undefined,
+          isLoading: false,
+          error: null,
+        };
+      },
+    },
+  },
 };
-
-export const trpc = createTRPCReact<AppRouter>();
-
-function getUrl() {
-  // Replace with your actual web app URL
-  const baseUrl = __DEV__ 
-    ? 'http://localhost:3000'  // Development
-    : 'https://your-production-url.com';  // Production
-  
-  return `${baseUrl}/api/trpc`;
-}
-
-export const trpcClient = trpc.createClient({
-  links: [
-    httpBatchLink({
-      url: getUrl(),
-      transformer: superjson,
-    }),
-  ],
-});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,8 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    Modal,
+    FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +19,44 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { colors } from '@/lib/auth-constants';
+import { trpc } from '@/lib/trpc';
+
+// India regions data
+const indiaRegions = [
+    { state: "Andhra Pradesh", state_iso2: "AP" },
+    { state: "Arunachal Pradesh", state_iso2: "AR" },
+    { state: "Assam", state_iso2: "AS" },
+    { state: "Bihar", state_iso2: "BR" },
+    { state: "Chhattisgarh", state_iso2: "CT" },
+    { state: "Goa", state_iso2: "GA" },
+    { state: "Gujarat", state_iso2: "GJ" },
+    { state: "Haryana", state_iso2: "HR" },
+    { state: "Himachal Pradesh", state_iso2: "HP" },
+    { state: "Jharkhand", state_iso2: "JH" },
+    { state: "Karnataka", state_iso2: "KA" },
+    { state: "Kerala", state_iso2: "KL" },
+    { state: "Madhya Pradesh", state_iso2: "MP" },
+    { state: "Maharashtra", state_iso2: "MH" },
+    { state: "Manipur", state_iso2: "MN" },
+    { state: "Meghalaya", state_iso2: "ML" },
+    { state: "Mizoram", state_iso2: "MZ" },
+    { state: "Nagaland", state_iso2: "NL" },
+    { state: "Odisha", state_iso2: "OR" },
+    { state: "Punjab", state_iso2: "PB" },
+    { state: "Rajasthan", state_iso2: "RJ" },
+    { state: "Sikkim", state_iso2: "SK" },
+    { state: "Tamil Nadu", state_iso2: "TN" },
+    { state: "Telangana", state_iso2: "TS" },
+    { state: "Tripura", state_iso2: "TR" },
+    { state: "Uttar Pradesh", state_iso2: "UP" },
+    { state: "Uttarakhand", state_iso2: "UK" },
+    { state: "West Bengal", state_iso2: "WB" },
+];
+
+type City = {
+    id: number;
+    name: string;
+};
 
 const registrationSchema = z
     .object({
@@ -99,12 +139,114 @@ export default function RegisterTouristScreen() {
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 3;
 
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-        trigger,
-    } = useForm<RegistrationForm>({
+    // State and City management
+    const [selectedStateIso, setSelectedStateIso] = useState('');
+    const [cities, setCities] = useState<City[]>([]);
+    const [showStateModal, setShowStateModal] = useState(false);
+    const [showCityModal, setShowCityModal] = useState(false);
+
+    // State for loading and error handling
+    const [citiesLoading, setCitiesLoading] = useState(false);
+    const [citiesError, setCitiesError] = useState<string | null>(null);
+
+    // Fetch cities when state changes
+    useEffect(() => {
+        if (selectedStateIso) {
+            setCitiesLoading(true);
+            setCitiesError(null);
+
+            // Fetch cities from the Country State City API
+            const apiKey = process.env.EXPO_PUBLIC_CSC_API_KEY;
+            if (!apiKey) {
+                // Use mock data if no API key is configured
+                throw new Error('API key not configured');
+            }
+
+            fetch(`https://api.countrystatecity.in/v1/countries/IN/states/${selectedStateIso}/cities`, {
+                headers: {
+                    'X-CSCAPI-KEY': apiKey
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch cities');
+                    }
+                    return response.json();
+                })
+                .then((data: City[]) => {
+                    setCities(data);
+                    setCitiesLoading(false);
+                })
+                .catch((error) => {
+                    console.error('Error fetching cities:', error);
+                    setCitiesError('Failed to load cities');
+                    setCitiesLoading(false);
+                    // Fallback to mock data for demo purposes
+                    const mockCitiesData: Record<string, City[]> = {
+                        'MH': [
+                            { id: 1, name: 'Mumbai' },
+                            { id: 2, name: 'Pune' },
+                            { id: 3, name: 'Nagpur' },
+                            { id: 4, name: 'Nashik' },
+                        ],
+                        'KA': [
+                            { id: 5, name: 'Bangalore' },
+                            { id: 6, name: 'Mysore' },
+                            { id: 7, name: 'Mangalore' },
+                        ],
+                        'TN': [
+                            { id: 8, name: 'Chennai' },
+                            { id: 9, name: 'Coimbatore' },
+                            { id: 10, name: 'Madurai' },
+                        ],
+                        'GJ': [
+                            { id: 13, name: 'Ahmedabad' },
+                            { id: 14, name: 'Surat' },
+                            { id: 15, name: 'Vadodara' },
+                        ],
+                        'RJ': [
+                            { id: 16, name: 'Jaipur' },
+                            { id: 17, name: 'Jodhpur' },
+                            { id: 18, name: 'Udaipur' },
+                        ],
+                        'UP': [
+                            { id: 19, name: 'Lucknow' },
+                            { id: 20, name: 'Kanpur' },
+                            { id: 21, name: 'Agra' },
+                            { id: 22, name: 'Varanasi' },
+                        ],
+                        'WB': [
+                            { id: 23, name: 'Kolkata' },
+                            { id: 24, name: 'Darjeeling' },
+                            { id: 25, name: 'Siliguri' },
+                        ],
+                        'AP': [
+                            { id: 26, name: 'Hyderabad' },
+                            { id: 27, name: 'Visakhapatnam' },
+                            { id: 28, name: 'Vijayawada' },
+                        ],
+                        'KL': [
+                            { id: 29, name: 'Kochi' },
+                            { id: 30, name: 'Thiruvananthapuram' },
+                            { id: 31, name: 'Kozhikode' },
+                        ],
+                        'PB': [
+                            { id: 32, name: 'Chandigarh' },
+                            { id: 33, name: 'Ludhiana' },
+                            { id: 34, name: 'Amritsar' },
+                        ],
+                    };
+                    const fallbackCities = mockCitiesData[selectedStateIso] || [];
+                    setCities(fallbackCities);
+                });
+        } else {
+            setCities([]);
+            setCitiesLoading(false);
+            setCitiesError(null);
+        }
+    }, [selectedStateIso]);
+
+    const form = useForm<RegistrationForm>({
         resolver: zodResolver(registrationSchema),
         defaultValues: {
             fullName: '',
@@ -138,6 +280,13 @@ export default function RegisterTouristScreen() {
             healthInfo: '',
         },
     });
+
+    const {
+        control,
+        handleSubmit,
+        formState: { errors },
+        trigger,
+    } = form;
 
     const onSubmit = async (data: RegistrationForm) => {
         setIsLoading(true);
@@ -499,35 +648,70 @@ export default function RegisterTouristScreen() {
                 />
             </View>
 
-            <Controller
-                control={control}
-                name="tripState"
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                        label="Trip State"
-                        placeholder="Enter destination state"
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        error={errors.tripState?.message}
-                    />
+            {/* Trip State Dropdown */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Trip State</Text>
+                <Controller
+                    control={control}
+                    name="tripState"
+                    render={({ field: { onChange, value } }) => (
+                        <TouchableOpacity
+                            style={[styles.dropdownInput, errors.tripState && styles.inputError]}
+                            onPress={() => setShowStateModal(true)}
+                        >
+                            <Text style={[styles.dropdownText, !value && styles.placeholderText]}>
+                                {value || 'Select destination state'}
+                            </Text>
+                            <Ionicons name="chevron-down" size={20} color={colors.text.slate400} />
+                        </TouchableOpacity>
+                    )}
+                />
+                {errors.tripState && (
+                    <Text style={styles.errorText}>{errors.tripState.message}</Text>
                 )}
-            />
+            </View>
 
-            <Controller
-                control={control}
-                name="tripCity"
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                        label="Trip City"
-                        placeholder="Enter destination city"
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        error={errors.tripCity?.message}
-                    />
+            {/* Trip City Dropdown */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Trip City</Text>
+                <Controller
+                    control={control}
+                    name="tripCity"
+                    render={({ field: { onChange, value } }) => (
+                        <TouchableOpacity
+                            style={[
+                                styles.dropdownInput,
+                                errors.tripCity && styles.inputError,
+                                !selectedStateIso && styles.disabledInput
+                            ]}
+                            onPress={() => {
+                                if (selectedStateIso) {
+                                    setShowCityModal(true);
+                                } else {
+                                    Alert.alert('Please select a state first');
+                                }
+                            }}
+                            disabled={!selectedStateIso}
+                        >
+                            <Text style={[
+                                styles.dropdownText,
+                                !value && styles.placeholderText,
+                                !selectedStateIso && styles.disabledText
+                            ]}>
+                                {value || (selectedStateIso ? 'Select destination city' : 'Select state first')}
+                            </Text>
+                            <Ionicons
+                                name="chevron-down"
+                                size={20}
+                                color={selectedStateIso ? colors.text.slate400 : colors.text.slate500}
+                            />
+                        </TouchableOpacity>
+                    )}
+                />
+                {errors.tripCity && (
+                    <Text style={styles.errorText}>{errors.tripCity.message}</Text>
                 )}
-            />
+            </View>
 
             <Controller
                 control={control}
@@ -766,6 +950,114 @@ export default function RegisterTouristScreen() {
                     </View>
                 </View>
             </ScrollView>
+
+            {/* State Selection Modal */}
+            <Modal
+                visible={showStateModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowStateModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select State</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowStateModal(false)}
+                                style={styles.closeButton}
+                            >
+                                <Ionicons name="close" size={24} color={colors.text.white} />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={indiaRegions}
+                            keyExtractor={(item) => item.state_iso2}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.modalItem}
+                                    onPress={() => {
+                                        const stateValue = form.getValues('tripState');
+                                        if (stateValue !== item.state) {
+                                            // Reset city when state changes
+                                            form.setValue('tripCity', '');
+                                            setCities([]);
+                                        }
+                                        form.setValue('tripState', item.state);
+                                        setSelectedStateIso(item.state_iso2);
+                                        setShowStateModal(false);
+                                    }}
+                                >
+                                    <Text style={styles.modalItemText}>{item.state}</Text>
+                                </TouchableOpacity>
+                            )}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    </View>
+                </View>
+            </Modal>
+
+            {/* City Selection Modal */}
+            <Modal
+                visible={showCityModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowCityModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select City</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowCityModal(false)}
+                                style={styles.closeButton}
+                            >
+                                <Ionicons name="close" size={24} color={colors.text.white} />
+                            </TouchableOpacity>
+                        </View>
+                        {citiesLoading ? (
+                            <View style={styles.loadingContainer}>
+                                <Text style={styles.loadingText}>Loading cities...</Text>
+                            </View>
+                        ) : citiesError ? (
+                            <View style={styles.loadingContainer}>
+                                <Text style={styles.errorText}>Failed to load cities</Text>
+                                <TouchableOpacity
+                                    style={styles.retryButton}
+                                    onPress={() => {
+                                        // Trigger refetch by changing the state
+                                        const currentState = selectedStateIso;
+                                        setSelectedStateIso('');
+                                        setTimeout(() => setSelectedStateIso(currentState), 100);
+                                    }}
+                                >
+                                    <Text style={styles.retryText}>Retry</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : cities.length > 0 ? (
+                            <FlatList
+                                data={cities}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={styles.modalItem}
+                                        onPress={() => {
+                                            form.setValue('tripCity', item.name);
+                                            setShowCityModal(false);
+                                        }}
+                                    >
+                                        <Text style={styles.modalItemText}>{item.name}</Text>
+                                    </TouchableOpacity>
+                                )}
+                                showsVerticalScrollIndicator={false}
+                            />
+                        ) : (
+                            <View style={styles.loadingContainer}>
+                                <Text style={styles.loadingText}>No cities found for this state</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </DashboardLayout>
     );
 }
@@ -948,5 +1240,95 @@ const styles = StyleSheet.create({
         color: colors.text.white,
         marginTop: 24,
         marginBottom: 16,
+    },
+    dropdownInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: colors.background.slate800,
+        borderWidth: 1,
+        borderColor: colors.border.purple500 + '40',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        minHeight: 50,
+    },
+    dropdownText: {
+        fontSize: 16,
+        color: colors.text.white,
+        flex: 1,
+    },
+    placeholderText: {
+        color: colors.text.slate400,
+    },
+    disabledInput: {
+        backgroundColor: colors.background.slate800 + '60',
+        borderColor: colors.border.purple500 + '20',
+    },
+    disabledText: {
+        color: colors.text.slate500,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: colors.background.slate800,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        maxHeight: '70%',
+        paddingBottom: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.purple500 + '20',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: colors.text.white,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalItem: {
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.purple500 + '10',
+    },
+    modalItemText: {
+        fontSize: 16,
+        color: colors.text.white,
+    },
+    loadingContainer: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    loadingText: {
+        fontSize: 16,
+        color: colors.text.slate400,
+    },
+    retryButton: {
+        marginTop: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: colors.primary.purple,
+        borderRadius: 8,
+    },
+    retryText: {
+        fontSize: 14,
+        color: colors.text.white,
+        fontWeight: '600',
+    },
+    loadingIndicator: {
+        fontSize: 18,
+        color: colors.primary.purple,
+        fontWeight: 'bold',
     },
 });
