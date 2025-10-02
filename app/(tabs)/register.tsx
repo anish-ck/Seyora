@@ -18,8 +18,8 @@ import { z } from 'zod';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { colors } from '@/lib/auth-constants';
-import { trpc } from '@/lib/trpc';
 
 // India regions data
 const indiaRegions = [
@@ -129,6 +129,15 @@ const registrationSchema = z
                     path: ['panCardValue.dateOfBirth'],
                 });
             }
+        }
+
+        // Validate trip dates
+        if (data.tripEnd <= data.tripStart) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Trip end date must be after start date',
+                path: ['tripEnd'],
+            });
         }
     });
 
@@ -250,7 +259,7 @@ export default function RegisterTouristScreen() {
         resolver: zodResolver(registrationSchema),
         defaultValues: {
             fullName: '',
-            DOB: new Date(),
+            DOB: new Date(2000, 0, 1), // Default to a reasonable birth date
             idType: 'panCard',
             adhaarCardValue: undefined,
             panCardValue: {
@@ -271,7 +280,7 @@ export default function RegisterTouristScreen() {
                 relation: '',
             },
             tripStart: new Date(),
-            tripEnd: new Date(),
+            tripEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to 7 days from now
             accomodation: '',
             tripPurpose: 'travel',
             tripDetails: '',
@@ -421,30 +430,20 @@ export default function RegisterTouristScreen() {
                 )}
             />
 
-            <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Date of Birth</Text>
-                <Controller
-                    control={control}
-                    name="DOB"
-                    render={({ field: { onChange, value } }) => (
-                        <TouchableOpacity
-                            style={[styles.dateInput, errors.DOB && styles.inputError]}
-                            onPress={() => {
-                                // You can implement a date picker here
-                                Alert.alert('Date Picker', 'Date picker implementation needed');
-                            }}
-                        >
-                            <Text style={styles.dateText}>
-                                {value ? value.toLocaleDateString() : 'Select date of birth'}
-                            </Text>
-                            <Ionicons name="calendar" size={20} color={colors.text.slate400} />
-                        </TouchableOpacity>
-                    )}
-                />
-                {errors.DOB && (
-                    <Text style={styles.errorText}>{errors.DOB.message}</Text>
+            <Controller
+                control={control}
+                name="DOB"
+                render={({ field: { onChange, value } }) => (
+                    <DatePicker
+                        label="Date of Birth"
+                        value={value}
+                        onChange={onChange}
+                        error={errors.DOB?.message}
+                        placeholder="Select date of birth"
+                        maximumDate={new Date()}
+                    />
                 )}
-            </View>
+            />
         </View>
     );
 
@@ -525,16 +524,34 @@ export default function RegisterTouristScreen() {
                                 <Controller
                                     control={control}
                                     name="panCardValue.dateOfBirth"
-                                    render={({ field: { onChange, onBlur, value } }) => (
-                                        <Input
-                                            label="Date of Birth on PAN Card"
-                                            placeholder="DD/MM/YYYY"
-                                            value={value || ''}
-                                            onChangeText={onChange}
-                                            onBlur={onBlur}
-                                            error={errors.panCardValue?.dateOfBirth?.message}
-                                        />
-                                    )}
+                                    render={({ field: { onChange, value } }) => {
+                                        // Convert string to Date for DatePicker, with fallback
+                                        let dateValue: Date;
+                                        try {
+                                            dateValue = value ? new Date(value) : new Date(2000, 0, 1);
+                                            // Check if date is valid
+                                            if (isNaN(dateValue.getTime())) {
+                                                dateValue = new Date(2000, 0, 1);
+                                            }
+                                        } catch {
+                                            dateValue = new Date(2000, 0, 1);
+                                        }
+
+                                        return (
+                                            <DatePicker
+                                                label="Date of Birth on PAN Card"
+                                                value={dateValue}
+                                                onChange={(date) => {
+                                                    // Format as YYYY-MM-DD for consistency
+                                                    const formattedDate = date.toISOString().split('T')[0];
+                                                    onChange(formattedDate);
+                                                }}
+                                                error={errors.panCardValue?.dateOfBirth?.message}
+                                                placeholder="Select date of birth"
+                                                maximumDate={new Date()}
+                                            />
+                                        );
+                                    }}
                                 />
                             </>
                         )}
@@ -560,53 +577,38 @@ export default function RegisterTouristScreen() {
             />
 
             {/* Trip Dates */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Trip Start Date</Text>
-                <Controller
-                    control={control}
-                    name="tripStart"
-                    render={({ field: { onChange, value } }) => (
-                        <TouchableOpacity
-                            style={[styles.dateInput, errors.tripStart && styles.inputError]}
-                            onPress={() => {
-                                Alert.alert('Date Picker', 'Date picker implementation needed');
-                            }}
-                        >
-                            <Text style={styles.dateText}>
-                                {value ? value.toLocaleDateString() : 'Select trip start date'}
-                            </Text>
-                            <Ionicons name="calendar" size={20} color={colors.text.slate400} />
-                        </TouchableOpacity>
-                    )}
-                />
-                {errors.tripStart && (
-                    <Text style={styles.errorText}>{errors.tripStart.message}</Text>
+            <Controller
+                control={control}
+                name="tripStart"
+                render={({ field: { onChange, value } }) => (
+                    <DatePicker
+                        label="Trip Start Date"
+                        value={value}
+                        onChange={onChange}
+                        error={errors.tripStart?.message}
+                        placeholder="Select trip start date"
+                        minimumDate={new Date()}
+                    />
                 )}
-            </View>
+            />
 
-            <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Trip End Date</Text>
-                <Controller
-                    control={control}
-                    name="tripEnd"
-                    render={({ field: { onChange, value } }) => (
-                        <TouchableOpacity
-                            style={[styles.dateInput, errors.tripEnd && styles.inputError]}
-                            onPress={() => {
-                                Alert.alert('Date Picker', 'Date picker implementation needed');
-                            }}
-                        >
-                            <Text style={styles.dateText}>
-                                {value ? value.toLocaleDateString() : 'Select trip end date'}
-                            </Text>
-                            <Ionicons name="calendar" size={20} color={colors.text.slate400} />
-                        </TouchableOpacity>
-                    )}
-                />
-                {errors.tripEnd && (
-                    <Text style={styles.errorText}>{errors.tripEnd.message}</Text>
-                )}
-            </View>
+            <Controller
+                control={control}
+                name="tripEnd"
+                render={({ field: { onChange, value } }) => {
+                    const tripStartValue = form.watch('tripStart');
+                    return (
+                        <DatePicker
+                            label="Trip End Date"
+                            value={value}
+                            onChange={onChange}
+                            error={errors.tripEnd?.message}
+                            placeholder="Select trip end date"
+                            minimumDate={tripStartValue || new Date()}
+                        />
+                    );
+                }}
+            />
 
             {/* Trip Purpose */}
             <View style={styles.inputContainer}>
@@ -1175,22 +1177,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.text.white,
         marginBottom: 8,
-    },
-    dateInput: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: colors.background.slate800,
-        borderWidth: 1,
-        borderColor: colors.border.purple500 + '40',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        minHeight: 50,
-    },
-    dateText: {
-        fontSize: 16,
-        color: colors.text.white,
     },
     inputError: {
         borderColor: '#ef4444',
