@@ -1,0 +1,36 @@
+# Ignore files that don't need to be in the build
+*.md
+*.log
+.git/
+.expo/
+node_modules/.cache/
+.vscode/
+.idea/
+*.test.js
+*.test.ts
+*.test.tsx
+__tests__/
+coverage/
+docs/
+screenshots/
+.env.example
+.env.local
+.env.development
+.env.test
+
+# Development only files
+metro.config.js.bak
+babel.config.js.bak
+tsconfig.json.bak
+
+# Large assets that aren't needed
+*.psd
+*.sketch
+*.fig
+*.ai
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db

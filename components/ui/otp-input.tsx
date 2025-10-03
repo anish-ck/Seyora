@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { 
-  View, 
-  TextInput, 
-  StyleSheet, 
+import {
+  View,
+  TextInput,
+  StyleSheet,
   Text,
-  TouchableOpacity 
+  TouchableOpacity
 } from 'react-native';
 import { colors } from '@/lib/auth-constants';
 
@@ -67,7 +67,9 @@ export const OTPInput: React.FC<OTPInputProps> = ({
             ]}
           >
             <TextInput
-              ref={(ref) => (inputRefs.current[index] = ref)}
+              ref={(ref) => {
+                inputRefs.current[index] = ref;
+              }}
               style={styles.input}
               value={value[index] || ''}
               onChangeText={(text) => handleChangeText(text, index)}
